@@ -12,7 +12,7 @@ import com.google.mlkit.vision.common.InputImage
  * @created 2022-06-03
  * @desc
  */
-class QRCodeAnalyzer : ImageAnalysis.Analyzer {
+class QRCodeAnalyzer(val onDetectListener: OnDetectListener) : ImageAnalysis.Analyzer {
 
     private val scanner = BarcodeScanning.getClient()
 
@@ -23,7 +23,9 @@ class QRCodeAnalyzer : ImageAnalysis.Analyzer {
             // 카메라의 회전각도를 고려
             val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
             scanner.process(image).addOnSuccessListener { qrCodes ->
-               // 리스너
+                for (qrCode in qrCodes) {
+                    onDetectListener.onDetect(qrCode.rawValue ?: "")
+                }
             }.addOnFailureListener {
                 // 에러를 로그에 프린트
                 it.printStackTrace()

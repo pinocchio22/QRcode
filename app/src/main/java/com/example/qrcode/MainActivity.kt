@@ -7,11 +7,14 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import com.example.qrcode.databinding.ActivityMainBinding
 import com.google.common.util.concurrent.ListenableFuture
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
 
@@ -57,23 +60,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // 미리보기와 이미지 분석 시작
-    fun startCamera() {
-        cameraProviderFuture = ProcessCameraProvider.getInstance(this)
-        cameraProviderFuture.addListener(Runnable {
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = getPreview()
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-            cameraProvider.bindToLifecycle(this, cameraSelector, preview)
-        }, ContextCompat.getMainExecutor(this))
-
-    }
-
     // 미리보기 객체 반환
     fun getPreview() : Preview {
         val preview : Preview = Preview.Builder().build()   // Preview 객체 생성
         preview.setSurfaceProvider(binding.barcodePreview.getSurfaceProvider())
         return preview
     }
+
+    fun getImageAnalysis() : ImageAnalysis {
+        val cameraExecutor : ExecutorService = Executors.newSingleThreadExecutor()
+        val imageAnalysis = ImageAnalysis.Builder().build()
+
+        imageAnalysis.setAnalyzer(cameraExecutor, QRCodeAnalyzer(object  : OnDetectListener {
+            override fun onDetect(msg: String) {
+                Toast.makeText(this@MainActivity, "$msg", Toast.LENGTH_SHORT).show()
+            }
+        }))
+        return imageAnalysis
+    }
+
+    // 미리보기와 이미지 분석 시작
+    fun startCamera() {
+        cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture.addListener(Runnable {
+            val cameraProvider = cameraProviderFuture.get()
+            val preview = getPreview()
+            val imageAnalysis = getImageAnalysis()
+            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+            cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis)
+        }, ContextCompat.getMainExecutor(this))
+
+    }
+
 }
