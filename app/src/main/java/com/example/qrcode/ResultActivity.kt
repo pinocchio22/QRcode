@@ -8,5 +8,5 @@ import androidx.appcompat.app.AppCompatActivity
  * @created 2022-06-02
  * @desc
  */
-class ResultActivity : AppCompatActivity {
+class ResultActivity : AppCompatActivity() {
 }
